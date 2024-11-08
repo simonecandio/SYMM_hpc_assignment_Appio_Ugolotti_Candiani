@@ -43,11 +43,11 @@ static void print_array(int ni, int nj,
   for (i = 0; i < ni; i++)
     for (j = 0; j < nj; j++)
     {
-      fprintf(stderr, DATA_PRINTF_MODIFIER, C[i][j]);
+      fprintf(stdout, DATA_PRINTF_MODIFIER, C[i][j]);
       if ((i * ni + j) % 20 == 0)
-        fprintf(stderr, "\n");
+        fprintf(stdout, "\n");
     }
-  fprintf(stderr, "\n");
+  fprintf(stdout, "\n");
 }
 
 /* Main computational kernel. The whole function will be timed,
