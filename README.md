@@ -1,4 +1,4 @@
 # COMPONENTI GRUPPO:
 - Alessandro Appio
 - Emanuele Ugolotti
-- Simone Candio
+- Simone Candiani
