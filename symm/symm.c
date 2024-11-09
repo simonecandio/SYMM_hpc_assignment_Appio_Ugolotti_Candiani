@@ -11,6 +11,45 @@
 /* Default data type is double, default size is 4000. */
 #include "symm.h"
 
+
+/* Array initialization SEQ. */
+static void init_array_seq(int ni, int nj,
+                       DATA_TYPE *alpha,
+                       DATA_TYPE *beta,
+                       DATA_TYPE POLYBENCH_2D(C, NI, NJ, ni, nj),
+                       DATA_TYPE POLYBENCH_2D(A, NJ, NJ, nj, nj),
+                       DATA_TYPE POLYBENCH_2D(B, NI, NJ, ni, nj))
+{
+  int i, j;
+
+  *alpha = 32412;
+  *beta = 2123;
+  //#pragma omp target map(tofrom: C[0:ni][0:nj], B[0:ni][0:nj], A[0:nj][0:nj])
+   #pragma omp parallel
+   {
+    
+    //#pragma omp parallel for num_threads(4) collapse(2) private(i,j) schedule(static)
+    #pragma omp for collapse(2) schedule(static, 8)
+    //#pragma omp teams distribute parallel for collapse(2) schedule(static, 8)
+    for (i = 0; i < ni; i++)
+      for (j = 0; j < nj; j++)
+      {
+        C[i][j] = ((DATA_TYPE)i * j) / ni;
+        B[i][j] = ((DATA_TYPE)i * j) / ni;
+      }
+    //#pragma omp parallel for collapse(2) private(i,j) schedule(static, 16)
+    #pragma omp for collapse(2) schedule(static, 2) 
+    //#pragma omp teams distribute parallel for collapse(2) schedule(static, 2)
+    for (i = 0; i < nj; i++)
+      for (j = 0; j < nj; j++)
+        A[i][j] = ((DATA_TYPE)i * j) / ni;
+    }  
+    
+}
+
+
+
+
 /* Array initialization. */
 static void init_array(int ni, int nj,
                        DATA_TYPE *alpha,
@@ -45,6 +84,8 @@ static void init_array(int ni, int nj,
     }  
     
 }
+
+
 
 /* DCE code. Must scan the entire live-out data.
    Can be used also to check the correctness of the output. */
@@ -148,7 +189,7 @@ int main(int argc, char **argv)
   /* Retrieve problem size. */
   int ni = NI;
   int nj = NJ;
-  double start_time_par_init1, start_time_par_init2, par_time_init1, par_time_init2, start_time1, start_time_seq, seq_time, T_non_parallel_init, T_non_parallel_print, start_time_par, T_non_parallel;
+  double start_time_seq_init1, start_time_par_init2, seq_time_init1, par_time_init2, start_time1, start_time_seq, seq_time, T_non_parallel_init, T_non_parallel_print, start_time_par, T_non_parallel;
   double PARALLEL_FRACTION, par_time, speedup, num_threads, amdahl_speedup;
  
   /* Variable declaration/allocation. */
@@ -159,13 +200,13 @@ int main(int argc, char **argv)
   POLYBENCH_2D_ARRAY_DECL(A, DATA_TYPE, NJ, NJ, nj, nj);
   POLYBENCH_2D_ARRAY_DECL(B, DATA_TYPE, NI, NJ, ni, nj);
   
-  start_time_par_init1 = omp_get_wtime();
+  start_time_seq_init1 = omp_get_wtime();
   /* Initialize array(s). */
-  init_array(ni, nj, &alpha, &beta,
+  init_array_seq(ni, nj, &alpha, &beta,
              POLYBENCH_ARRAY(C_seq),
              POLYBENCH_ARRAY(A),
              POLYBENCH_ARRAY(B));
-  par_time_init1 = omp_get_wtime() - start_time_par_init1;
+  seq_time_init1 = omp_get_wtime() - start_time_seq_init1;
   
 
   //polybench_start_instruments;
@@ -173,7 +214,7 @@ int main(int argc, char **argv)
   kernel_symm_sequential(ni, nj, alpha, beta, POLYBENCH_ARRAY(C_seq), POLYBENCH_ARRAY(A), POLYBENCH_ARRAY(B));
   //polybench_stop_instruments;
   //polybench_print_instruments;
-  seq_time = omp_get_wtime() - start_time_seq;
+  seq_time = (omp_get_wtime() - start_time_seq)+seq_time_init1;
   printf("Sequential Execution Time: %f seconds\n", seq_time);
  
 
@@ -199,7 +240,7 @@ int main(int argc, char **argv)
   /* Stop and print timer. */
   //polybench_stop_instruments;
   //polybench_print_instruments;
-  par_time = (omp_get_wtime() - start_time_par) + (par_time_init1+par_time_init2);
+  par_time = (omp_get_wtime() - start_time_par) + (par_time_init2);
   printf("Parallel Execution Time: %f seconds\n", par_time); 
   
   
