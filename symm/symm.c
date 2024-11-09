@@ -71,7 +71,8 @@ static void kernel_symm(int ni, int nj,
 reduction(+:acc): Somma il valore di acc tra i thread alla fine della computazione. Anche se acc viene riassegnato a zero in ogni iterazione di j, reduction garantisce che qualsiasi contributo parziale venga gestito correttamente.
 
 */
-#pragma omp for collapse(2) schedule(dynamic) private(j, k) reduction(+:acc) simd
+#pragma omp for collapse(2) schedule(dynamic) private(j, k) reduction(+:acc) 
+//#pragma omp simd
     
     for (i = 0; i < _PB_NI; i++)
       for (j = 0; j < _PB_NJ; j++)
