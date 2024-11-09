@@ -62,10 +62,10 @@ static void kernel_symm(int ni, int nj,
   int i, j, k;
   DATA_TYPE acc;
 #pragma scop
-#pragma omp parallel
+#pragma omp parallel num_threads(NTHREADS)
   {
 /*  C := alpha*A*B + beta*C, A is symetric */
-#pragma omp for private(j, acc, k)
+#pragma omp for collapse(2) private(j,k) reduction(+:acc) schedule(static,8)
     for (i = 0; i < _PB_NI; i++)
       for (j = 0; j < _PB_NJ; j++)
       {

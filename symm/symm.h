@@ -43,5 +43,12 @@
 #  define DATA_PRINTF_MODIFIER "%0.2lf "
 # endif
 
+#if !defined(NTHREADS)
+#define NTHREADS (4)
+#endif
+
+#if !defined(NTHREADS_GPU)
+#define NTHREADS_GPU (1024)
+#endif
 
 #endif /* !SYMM */
