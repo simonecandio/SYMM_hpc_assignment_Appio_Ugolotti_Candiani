@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+//make EXT_CFLAGS="-D POLYBENCH_TIME -D SMALL_DATASET" clean all run
 
 /* Include polybench common header. */
 #include <polybench.h>
@@ -22,6 +23,7 @@ static void init_array(int ni, int nj,
 
   *alpha = 32412;
   *beta = 2123;
+
   for (i = 0; i < ni; i++)
     for (j = 0; j < nj; j++)
     {
@@ -65,7 +67,11 @@ static void kernel_symm(int ni, int nj,
 #pragma omp parallel
   {
 /*  C := alpha*A*B + beta*C, A is symetric */
-#pragma omp for private(j, acc, k)
+/*
+reduction(+:acc): Somma il valore di acc tra i thread alla fine della computazione. Anche se acc viene riassegnato a zero in ogni iterazione di j, reduction garantisce che qualsiasi contributo parziale venga gestito correttamente.
+
+*/
+#pragma omp for collapse(2) schedule(dynamic) private(j, k) reduction(+:acc)
     for (i = 0; i < _PB_NI; i++)
       for (j = 0; j < _PB_NJ; j++)
       {
