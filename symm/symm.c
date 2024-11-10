@@ -24,28 +24,17 @@ static void init_array_seq(int ni, int nj,
 
   *alpha = 32412;
   *beta = 2123;
-  //#pragma omp target map(tofrom: C[0:ni][0:nj], B[0:ni][0:nj], A[0:nj][0:nj])
-   #pragma omp parallel
-   {
-    
-    //#pragma omp parallel for num_threads(4) collapse(2) private(i,j) schedule(static)
-    #pragma omp for collapse(2) schedule(static, 8)
-    //#pragma omp teams distribute parallel for collapse(2) schedule(static, 8)
     for (i = 0; i < ni; i++)
       for (j = 0; j < nj; j++)
       {
         C[i][j] = ((DATA_TYPE)i * j) / ni;
         B[i][j] = ((DATA_TYPE)i * j) / ni;
       }
-    //#pragma omp parallel for collapse(2) private(i,j) schedule(static, 16)
-    #pragma omp for collapse(2) schedule(static, 2) 
-    //#pragma omp teams distribute parallel for collapse(2) schedule(static, 2)
     for (i = 0; i < nj; i++)
       for (j = 0; j < nj; j++)
         A[i][j] = ((DATA_TYPE)i * j) / ni;
-    }  
+}  
     
-}
 
 
 
@@ -127,8 +116,6 @@ static void kernel_symm_sequential(int ni, int nj,
 
 
 
-
-
 /* Main computational kernel. The whole function will be timed,
    including the call and return. */
 static void kernel_symm(int ni, int nj,
@@ -176,7 +163,7 @@ int compare_matrices(int ni, int nj,
   for (i = 0; i < ni; i++) {
     for (j = 0; j < nj; j++) {
       if (C_seq[i][j] != C_par[i][j]) {
-        printf("Differenza trovata in C[%d][%d]: %f != %f\n", i, j, C_seq[i][j], C_par[i][j]);
+        printf("Difference found in C[%d][%d]: %f != %f\n", i, j, C_seq[i][j], C_par[i][j]);
         return 0;
       }
     }
@@ -189,96 +176,82 @@ int main(int argc, char **argv)
   /* Retrieve problem size. */
   int ni = NI;
   int nj = NJ;
-  double start_time_seq_init1, start_time_par_init2, seq_time_init1, par_time_init2, start_time1, start_time_seq, seq_time, T_non_parallel_init, T_non_parallel_print, start_time_par, T_non_parallel;
-  double PARALLEL_FRACTION, par_time, speedup, num_threads, amdahl_speedup;
+  double total_seq_time = 0.0, total_par_time = 0.0, total_speedup = 0.0, num_threads=0.0, amdahl_speedup=0.0;
+  int num_runs = 6; // Number of runs to calculate the average
+
+  for (int run = 0; run < num_runs; run++) {
+    double start_time_seq_init1, start_time_par_init2, seq_time_init1, par_time_init2, start_time1, start_time_seq, seq_time, T_non_parallel_init, T_non_parallel_print, start_time_par, T_non_parallel;
+    double PARALLEL_FRACTION, par_time, speedup, num_threads, amdahl_speedup;
  
-  /* Variable declaration/allocation. */
-  DATA_TYPE alpha;
-  DATA_TYPE beta;
-  POLYBENCH_2D_ARRAY_DECL(C_seq, DATA_TYPE, NI, NJ, ni, nj);
-  POLYBENCH_2D_ARRAY_DECL(C_par, DATA_TYPE, NI, NJ, ni, nj);
-  POLYBENCH_2D_ARRAY_DECL(A, DATA_TYPE, NJ, NJ, nj, nj);
-  POLYBENCH_2D_ARRAY_DECL(B, DATA_TYPE, NI, NJ, ni, nj);
+    /* Variable declaration/allocation. */
+    DATA_TYPE alpha;
+    DATA_TYPE beta;
+    POLYBENCH_2D_ARRAY_DECL(C_seq, DATA_TYPE, NI, NJ, ni, nj);
+    POLYBENCH_2D_ARRAY_DECL(C_par, DATA_TYPE, NI, NJ, ni, nj);
+    POLYBENCH_2D_ARRAY_DECL(A, DATA_TYPE, NJ, NJ, nj, nj);
+    POLYBENCH_2D_ARRAY_DECL(B, DATA_TYPE, NI, NJ, ni, nj);
   
-  start_time_seq_init1 = omp_get_wtime();
-  /* Initialize array(s). */
-  init_array_seq(ni, nj, &alpha, &beta,
-             POLYBENCH_ARRAY(C_seq),
-             POLYBENCH_ARRAY(A),
-             POLYBENCH_ARRAY(B));
-  seq_time_init1 = omp_get_wtime() - start_time_seq_init1;
+    start_time_seq_init1 = omp_get_wtime();
+    /* Initialize array(s) seq. */
+    init_array_seq(ni, nj, &alpha, &beta,
+                   POLYBENCH_ARRAY(C_seq),
+                   POLYBENCH_ARRAY(A),
+                   POLYBENCH_ARRAY(B));
+    seq_time_init1 = omp_get_wtime() - start_time_seq_init1;
   
 
-  //polybench_start_instruments;
-  start_time_seq = omp_get_wtime();
-  kernel_symm_sequential(ni, nj, alpha, beta, POLYBENCH_ARRAY(C_seq), POLYBENCH_ARRAY(A), POLYBENCH_ARRAY(B));
-  //polybench_stop_instruments;
-  //polybench_print_instruments;
-  seq_time = (omp_get_wtime() - start_time_seq)+seq_time_init1;
-  printf("Sequential Execution Time: %f seconds\n", seq_time);
- 
+    start_time_seq = omp_get_wtime();
+    kernel_symm_sequential(ni, nj, alpha, beta, POLYBENCH_ARRAY(C_seq), POLYBENCH_ARRAY(A), POLYBENCH_ARRAY(B));
+    seq_time = (omp_get_wtime() - start_time_seq) + seq_time_init1;
+    total_seq_time += seq_time; 
 
- /* Initialize array(s). */
-  start_time_par_init2 = omp_get_wtime();
-  init_array(ni, nj, &alpha, &beta,
-             POLYBENCH_ARRAY(C_par),
-             POLYBENCH_ARRAY(A),
-             POLYBENCH_ARRAY(B));
-  par_time_init2 = omp_get_wtime() - start_time_par_init2;
- 
+    /* Initialize array(s) par. */
+    start_time_par_init2 = omp_get_wtime();
+    init_array(ni, nj, &alpha, &beta,
+               POLYBENCH_ARRAY(C_par),
+               POLYBENCH_ARRAY(A),
+               POLYBENCH_ARRAY(B));
+    par_time_init2 = omp_get_wtime() - start_time_par_init2;
 
-  /* Start timer. */
-  //polybench_start_instruments;
-
-  start_time_par = omp_get_wtime();
-  /* Run kernel. */
-  kernel_symm(ni, nj,
-              alpha, beta,
-              POLYBENCH_ARRAY(C_par),
-              POLYBENCH_ARRAY(A),
-              POLYBENCH_ARRAY(B));
-  /* Stop and print timer. */
-  //polybench_stop_instruments;
-  //polybench_print_instruments;
-  par_time = (omp_get_wtime() - start_time_par) + (par_time_init2);
-  printf("Parallel Execution Time: %f seconds\n", par_time); 
+    start_time_par = omp_get_wtime();
+    kernel_symm(ni, nj,
+                alpha, beta,
+                POLYBENCH_ARRAY(C_par),
+                POLYBENCH_ARRAY(A),
+                POLYBENCH_ARRAY(B));
+    par_time = (omp_get_wtime() - start_time_par) + par_time_init2;
+    total_par_time += par_time; 
   
-  
-  if (compare_matrices(ni, nj, POLYBENCH_ARRAY(C_seq), POLYBENCH_ARRAY(C_par)))
-    printf("Le matrici calcolate sono uguali.\n");
-  else
-    printf("Le matrici calcolate sono diverse.\n");
+    speedup = seq_time / par_time;
+    total_speedup += speedup; 
 
- /* Prevent dead-code elimination. All live-out data must be printed
-     by the function call in argument. */
-  start_time1 = omp_get_wtime();
-  polybench_prevent_dce(print_array(ni, nj, POLYBENCH_ARRAY(C_seq)));
-  polybench_prevent_dce(print_array(ni, nj, POLYBENCH_ARRAY(C_par)));
-  T_non_parallel_init = omp_get_wtime() - start_time1;
-  //printf("Total Non-Parallelizable Time: %f seconds\n", T_non_parallel_init);
+    /* Compare matrices only once to avoid overhead */
+    if (run == 0) {
+      if (compare_matrices(ni, nj, POLYBENCH_ARRAY(C_seq), POLYBENCH_ARRAY(C_par)))
+        printf("The calculated matrices are equal.\n");
+      else
+        printf("The computed matrices are not equal.\n");
+    }
 
+    /* Be clean. */
+    POLYBENCH_FREE_ARRAY(C_seq);
+    POLYBENCH_FREE_ARRAY(C_par);
+    POLYBENCH_FREE_ARRAY(A);
+    POLYBENCH_FREE_ARRAY(B);
+  }
 
-/* Calculate Parallel Fraction */
-// PARALLEL_FRACTION = 1.0 - (T_non_parallel / seq_time);
-// printf("Calculated Parallel Fraction: %f\n", PARALLEL_FRACTION);
+  /* Calculate the averages */
+  double avg_seq_time = total_seq_time / num_runs;
+  double avg_par_time = total_par_time / num_runs;
+  double avg_speedup = total_speedup / num_runs;
 
-
-  /* Calculate Parallel Fraction */
-  speedup = seq_time / par_time;
-  printf("Speedup: %f\n", speedup);
-
-
+  /* Print average results */
+  printf("\nAverage Sequential Execution Time over %d runs: %f seconds\n", num_runs, avg_seq_time);
+  printf("Average Parallel Execution Time over %d runs: %f seconds\n", num_runs, avg_par_time);
+  printf("Average Speedup over %d runs: %f\n", num_runs, avg_speedup);
   num_threads = omp_get_max_threads();  // Max number of threads available
   amdahl_speedup = 1.0 / ((1.0 -  + 0.95) + 0.95 / num_threads);
   printf("Expected Amdahl Speedup: %f\n", amdahl_speedup);
 
- 
-
-  /* Be clean. */
-  POLYBENCH_FREE_ARRAY(C_seq);
-  POLYBENCH_FREE_ARRAY(C_par);
-  POLYBENCH_FREE_ARRAY(A);
-  POLYBENCH_FREE_ARRAY(B);
-  
   return 0;
 }
