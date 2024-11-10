@@ -177,7 +177,7 @@ int main(int argc, char **argv)
   int ni = NI;
   int nj = NJ;
   double total_seq_time = 0.0, total_par_time = 0.0, total_speedup = 0.0, num_threads=0.0, amdahl_speedup=0.0;
-  int num_runs = 6; // Number of runs to calculate the average
+  int num_runs = 5; // Number of runs to calculate the average
 
   for (int run = 0; run < num_runs; run++) {
     double start_time_seq_init1, start_time_par_init2, seq_time_init1, par_time_init2, start_time1, start_time_seq, seq_time, T_non_parallel_init, T_non_parallel_print, start_time_par, T_non_parallel;
