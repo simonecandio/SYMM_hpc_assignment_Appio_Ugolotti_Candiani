@@ -64,30 +64,33 @@ static void kernel_symm(int ni, int nj,
   int i, j, k;
   DATA_TYPE acc;
 #pragma scop
-#pragma omp parallel
+//#pragma omp parallel
+#pragma omp parallel private (i,j,k,acc)
   {
 /*  C := alpha*A*B + beta*C, A is symetric */
 /*
 reduction(+:acc): Somma il valore di acc tra i thread alla fine della computazione. Anche se acc viene riassegnato a zero in ogni iterazione di j, reduction garantisce che qualsiasi contributo parziale venga gestito correttamente.
 
 */
-#pragma omp for collapse(2) schedule(dynamic) private(j, k) reduction(+:acc) 
+//#pragma omp parallel for collapse(2) private(j, k, acc) shared(C, A, B, alpha, beta) schedule(dynamic)
 //#pragma omp simd
-    
-    for (i = 0; i < _PB_NI; i++)
-      for (j = 0; j < _PB_NJ; j++)
-      {
-        acc = 0;
-        for (k = 0; k < j - 1; k++)
-        {
-          C[k][j] += alpha * A[k][i] * B[i][j];
-          acc += B[k][j] * A[k][i];
-        }
-        C[i][j] = beta * C[i][j] + alpha * A[i][i] * B[i][j] + alpha * acc;
+//#pragma omp parallel shared(C, A, B, alpha, beta, ni, nj) default(none)
+{
+//  #pragma omp for collapse(2) private(i, j, acc, k) 
+#pragma omp for collapse(2) schedule(dynamic, 8) nowait
+  for (i = 0; i < ni; i++) {
+    for (j = 0; j < nj; j++) {
+      acc = 0;
+#pragma omp simd reduction(+:acc)
+      for (k = 0; k < j - 1; k++) {
+        C[k][j] += alpha * A[k][i] * B[i][j];
+        acc += B[k][j] * A[k][i];
       }
+      C[i][j] = beta * C[i][j] + alpha * A[i][i] * B[i][j] + alpha * acc;
+    }
   }
-#pragma endscop
-}
+}}}
+
 
 int main(int argc, char **argv)
 {
