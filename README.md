@@ -48,9 +48,9 @@ To get the results run the bench.sh file, to get the extra large result, you nee
 ---
 
 ### Extra Large Dataset
-- **Tempo Medio Sequenziale (3 run):** 961,869574 secondi  
-- **Tempo Medio Parallelo (3 run):** 560,203402 secondi  
-- **Speedup Medio (3 run):** 1,717000  
+- **Average Sequential Execution Time (3 run):** 961,869574 secondi  
+- **Average Parallel Execution Time (3 run):** 560,203402 secondi  
+- **Average Speedup (3 run):** 1,717000  
 
 ---
 
