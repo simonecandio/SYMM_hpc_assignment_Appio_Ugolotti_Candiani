@@ -23,6 +23,7 @@
 
 # Project Results 
 ## Average Execution Times and Speedups
+To get the results run the bench.sh file 
 
 ### Small Dataset
 - **Average Sequential Execution Time (3 runs):** 0,029822 seconds
