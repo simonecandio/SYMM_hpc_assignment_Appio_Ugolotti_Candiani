@@ -41,9 +41,9 @@ To get the results run the bench.sh file, to get the extra large result, you nee
 ---
 
 ### Large Dataset
-- **Average Sequential Execution Time (3 runs):** 98,396555 seconds
-- **Average Parallel Execution Time (3 runs):** 63,018071 seconds
-- **Average Speedup (3 runs):** 1,561307
+- **Average Sequential Execution Time (3 runs):** 103.639361 seconds
+- **Average Parallel Execution Time (3 runs):** 57.282299 seconds
+- **Average Speedup (3 runs):** 1.80927
 
 ---
 
@@ -61,7 +61,7 @@ To get the results run the bench.sh file, to get the extra large result, you nee
 |-------------------|---------------------------------|--------------------------------|--------------------|
 | **SMALL DATASET** | 0,029822                       | 0,016785                       | 1,821161          |
 | **Standard DATASET** | 37,747477                      | 17,310042                      | 2,251014          |
-| **Large Dataset** | 98,396555                      | 63,018071                      | 1,561307          |
+| **Large Dataset** | 103.639361                      | 57.282299                      | 1.80927          |
 | **Extra Large Dataset** | 961,869574                    | 560,203402                     | 1,717000          |
 
 ---
