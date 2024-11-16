@@ -57,7 +57,7 @@ To get the results run the bench.sh file, to get the extra large result, you nee
 ### IN THE TABLE
 
 
-| **Dataset**      | **Tempo Medio Sequenziale (s)** | **Tempo Medio Parallelo (s)** | **Speedup Medio** |
+| **Dataset**      | **Average Sequential Time (s)** | **Average Parallel Time (s)** | **Average Speedup** |
 |-------------------|---------------------------------|--------------------------------|--------------------|
 | **SMALL DATASET** | 0,029822                       | 0,016785                       | 1,821161          |
 | **Standard DATASET** | 37,747477                      | 17,310042                      | 2,251014          |
