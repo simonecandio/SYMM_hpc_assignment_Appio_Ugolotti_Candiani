@@ -51,22 +51,18 @@ static void init_array(int ni, int nj,
 
   *alpha = 32412;
   *beta = 2123;
-  //#pragma omp target map(tofrom: C[0:ni][0:nj], B[0:ni][0:nj], A[0:nj][0:nj])
-   #pragma omp parallel
+   #pragma omp parallel num_threads(4)
    {
     
-    //#pragma omp parallel for num_threads(4) collapse(2) private(i,j) schedule(static)
-    #pragma omp for collapse(2) schedule(static, 8)
-    //#pragma omp teams distribute parallel for collapse(2) schedule(static, 8)
+    #pragma omp for collapse(2) schedule(static)
     for (i = 0; i < ni; i++)
       for (j = 0; j < nj; j++)
       {
         C[i][j] = ((DATA_TYPE)i * j) / ni;
         B[i][j] = ((DATA_TYPE)i * j) / ni;
       }
-    //#pragma omp parallel for collapse(2) private(i,j) schedule(static, 16)
-    #pragma omp for collapse(2) schedule(static, 2) 
-    //#pragma omp teams distribute parallel for collapse(2) schedule(static, 2)
+    
+    #pragma omp for collapse(2) schedule(static)
     for (i = 0; i < nj; i++)
       for (j = 0; j < nj; j++)
         A[i][j] = ((DATA_TYPE)i * j) / ni;
@@ -92,6 +88,7 @@ static void print_array(int ni, int nj,
     }
   fprintf(stderr, "\n");
 }
+/* Main computational kernel (sequential).*/
 static void kernel_symm_sequential(int ni, int nj,
                                    DATA_TYPE alpha,
                                    DATA_TYPE beta,
@@ -114,10 +111,7 @@ static void kernel_symm_sequential(int ni, int nj,
 }
 
 
-
-
-/* Main computational kernel. The whole function will be timed,
-   including the call and return. */
+/* Main computational kernel. (parallel) */
 static void kernel_symm(int ni, int nj,
                         DATA_TYPE alpha,
                         DATA_TYPE beta,
@@ -127,32 +121,23 @@ static void kernel_symm(int ni, int nj,
 {
   int i, j, k;
   DATA_TYPE acc;
-#pragma scop
-#pragma omp parallel
-  {
-/*  C := alpha*A*B + beta*C, A is symetric */
-//#pragma omp for private(j, acc, k)
-      #pragma omp for collapse(2) private(i, j, k, acc) schedule(static, 8)
-//#pragma omp for collapse(2) private(i, j, k) reduction(+:acc)
-     //#pragma omp target data map(to: A[0:nj][0:nj], B[0:ni][0:nj]) map(tofrom: C[0:ni][0:nj])
-      //{
-     // #pragma omp target teams distribute parallel for collapse(2) private(i, j, k, acc)
-      for (i = 0; i < _PB_NI; i++)
-      for (j = 0; j < _PB_NJ; j++)
-      {
-        acc = 0;
-        #pragma omp reduction(+:acc)
-        //#pragma omp simd
-        for (k = 0; k < j - 1; k++)
-        {
-          C[k][j] += alpha * A[k][i] * B[i][j];
-          acc += B[k][j] * A[k][i];
-        }
-        C[i][j] = beta * C[i][j] + alpha * A[i][i] * B[i][j] + alpha * acc;
-      }
-    //  }
-  }
-#pragma endscop
+  #pragma scop
+  #pragma omp parallel num_threads(4)  
+ {	
+   #pragma omp for private(i,j,k) collapse(2) reduction(+:acc) schedule(static, 4) 
+	 for (i = 0; i < _PB_NI; i++){
+     for (j = 0; j < _PB_NJ; j++){
+       acc = 0;
+       for (k = 0; k < j - 1; k++)
+       {        
+        C[k][j] += alpha * A[k][i] * B[i][j];
+        acc += B[k][j] * A[k][i];
+       } 
+       C[i][j] = beta * C[i][j] + alpha * A[i][i] * B[i][j] + alpha * acc;
+ 	   }
+   }
+ }
+  #pragma endscop
 }
 
 
@@ -160,10 +145,12 @@ int compare_matrices(int ni, int nj,
                      DATA_TYPE POLYBENCH_2D(C_seq, NI, NJ, ni, nj),
                      DATA_TYPE POLYBENCH_2D(C_par, NI, NJ, ni, nj)) {
   int i, j;
+  const double epsilon = 1e-5;
   for (i = 0; i < ni; i++) {
     for (j = 0; j < nj; j++) {
-      if (C_seq[i][j] != C_par[i][j]) {
-        printf("Difference found in C[%d][%d]: %f != %f\n", i, j, C_seq[i][j], C_par[i][j]);
+      //if (fabs(C_seq[i][j] - C_par[i][j]) > epsilon) {
+        if(C_seq[i][j] != C_par[i][j]){
+	printf("Difference found in C[%d][%d]: %f != %f\n", i, j, C_seq[i][j], C_par[i][j]);
         return 0;
       }
     }
@@ -177,11 +164,11 @@ int main(int argc, char **argv)
   int ni = NI;
   int nj = NJ;
   double total_seq_time = 0.0, total_par_time = 0.0, total_speedup = 0.0, num_threads=0.0, amdahl_speedup=0.0;
-  int num_runs = 5; // Number of runs to calculate the average
+  int num_runs =3; // Number of runs to calculate the average
 
   for (int run = 0; run < num_runs; run++) {
-    double start_time_seq_init1, start_time_par_init2, seq_time_init1, par_time_init2, start_time1, start_time_seq, seq_time, T_non_parallel_init, T_non_parallel_print, start_time_par, T_non_parallel;
-    double PARALLEL_FRACTION, par_time, speedup, num_threads, amdahl_speedup;
+    double start_time_seq_init1=0.0, start_time_par_init2=0.0, seq_time_init1=0.0, par_time_init2=0.0, start_time1=0.0, start_time_seq=0.0, seq_time=0.0, T_non_parallel_init=0.0, T_non_parallel_print=0.0, start_time_par=0.0, T_non_parallel=0.0;
+    double PARALLEL_FRACTION=0.0, par_time=0.0, speedup=0.0, num_threads=0.0, amdahl_speedup=0.0;
  
     /* Variable declaration/allocation. */
     DATA_TYPE alpha;
@@ -225,12 +212,16 @@ int main(int argc, char **argv)
     speedup = seq_time / par_time;
     total_speedup += speedup; 
 
+   //print_array(ni, nj, POLYBENCH_ARRAY(B));
     /* Compare matrices only once to avoid overhead */
     if (run == 0) {
       if (compare_matrices(ni, nj, POLYBENCH_ARRAY(C_seq), POLYBENCH_ARRAY(C_par)))
         printf("The calculated matrices are equal.\n");
       else
+      {
         printf("The computed matrices are not equal.\n");
+        return 0;
+      }
     }
 
     /* Be clean. */
