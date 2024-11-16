@@ -45,10 +45,17 @@
 
 ---
 
-### Extra Large Dataset
-- **Average Sequential Execution Time (3 run):** 961,869574 seconds
-- **Average Parallel Execution Time (3 run):** 560,203402 seconds
-- **Average Speedup (3 run):** 1,717000
+### IN THE TABLE
+
+
+| **Dataset**      | **Tempo Medio Sequenziale (s)** | **Tempo Medio Parallelo (s)** | **Speedup Medio** |
+|-------------------|---------------------------------|--------------------------------|--------------------|
+| **SMALL DATASET** | 0,029822                       | 0,016785                       | 1,821161          |
+| **Standard DATASET** | 37,747477                      | 17,310042                      | 2,251014          |
+| **Large Dataset** | 98,396555                      | 63,018071                      | 1,561307          |
+| **Extra Large Dataset** | 961,869574                    | 560,203402                     | 1,717000          |
+
+---
 
 
 
