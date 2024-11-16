@@ -23,8 +23,9 @@
 
 # Project Results 
 ## Average Execution Times and Speedups
-To get the results run the bench.sh file, to get the extra large result, you need to change the run number in main and run 
- - make EXT_CFLAGS="-DEXTRALARGE_DATASET" clean all run
+To get the results run the bench.sh file.
+- To get the extra large result, you need to change the run number in main  
+- And run: make EXT_CFLAGS="-DEXTRALARGE_DATASET" clean all run
 
 ### Small Dataset
 - **Average Sequential Execution Time (3 runs):** 0,029822 seconds
