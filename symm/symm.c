@@ -240,9 +240,6 @@ int main(int argc, char **argv)
   printf("\nAverage Sequential Execution Time over %d runs: %f seconds\n", num_runs, avg_seq_time);
   printf("Average Parallel Execution Time over %d runs: %f seconds\n", num_runs, avg_par_time);
   printf("Average Speedup over %d runs: %f\n", num_runs, avg_speedup);
-  num_threads = omp_get_max_threads();  // Max number of threads available
-  amdahl_speedup = 1.0 / ((1.0 -  + 0.95) + 0.95 / num_threads);
-  printf("Expected Amdahl Speedup: %f\n", amdahl_speedup);
 
   return 0;
 }
