@@ -9,7 +9,7 @@ do
   echo "Running make for dataset $dataset"
   
   # Execute make command with specified dataset
-  make EXT_CFLAGS="-D POLYBENCH_TIME -D $dataset" clean all run
+  make EXT_CFLAGS="-D $dataset" clean all run
   
   echo "Completed make for dataset $dataset"
   echo "----------------------------------------"
