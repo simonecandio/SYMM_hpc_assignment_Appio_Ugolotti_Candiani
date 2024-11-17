@@ -14,7 +14,8 @@
  - Created OpenMP parallelizations:
    - For Kernel:
      * [Creation of the parallelized section](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L124C1-L142C1)
-     * [Parallel for loop with collapse, reduction and schedule](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L127C4-L127C84)
+     * [Parallel for loop with collapse and schedule](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L127C4-L127C84)
+     * [Parallel reduction](https://github.com/alleappio/hpc_assignment_1/blob/d042962a8b224e1f27158e59a3f6b071265db7e3/symm/symm.c#L130)
    - For Init:
      * [First loop parallelized](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L57C5-L57C49)
      * [Second loop parallelized](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L65)
