@@ -11,12 +11,10 @@
  - [Creation of a function to compare the sequential and parallelized matrix](https://github.com/alleappio/hpc_assignment_1/blob/7f3a465ae524391a9890ad755887fb72a265fcad/symm/symm.c#L144C1-L159C2)
  - [Creation of a for loop to measure and calculate the average execution time](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L167C2-L169C45)
  - [Automated time calculation](https://github.com/alleappio/hpc_assignment_1/blob/7f3a465ae524391a9890ad755887fb72a265fcad/symm/symm.c#L234C1-L242C71)
- - [Symmetric Matrix Copy](https://github.com/alleappio/hpc_assignment_1/blob/842a9b2f634d9a97e2a48ac660f767eeec9e0f6b/symm/symm.c#L111C1-L115C4)
  - Created OpenMP parallelizations:
    - For Kernel:
      * [Creation of the parallelized section](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L124C1-L142C1)
      * [Parallel for loop with collapse, reduction and schedule](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L127C4-L127C84)
-     * [Parallel for loop - Symmetric Matrix Copy](https://github.com/alleappio/hpc_assignment_1/blob/842a9b2f634d9a97e2a48ac660f767eeec9e0f6b/symm/symm.c#L145C1-L149C6)
    - For Init:
      * [First loop parallelized](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L57C5-L57C49)
      * [Second loop parallelized](https://github.com/alleappio/hpc_assignment_1/blob/b766f69a4e8b23e6035146eb8309045773cef766/symm/symm.c#L65)
@@ -25,8 +23,9 @@
 
 # Project Results 
 ## Average Execution Times and Speedups
-To get the results run the bench.sh file, to get the extra large result, you need to change the run number in main and run 
- - make EXT_CFLAGS="-DEXTRALARGE_DATASET" clean all run
+To get the results run the bench.sh file.
+- To get the extra large result, you need to change the run number in main  
+- And run: make EXT_CFLAGS="-DEXTRALARGE_DATASET" clean all run
 
 ### Small Dataset
 - **Average Sequential Execution Time (3 runs):** 0,029822 seconds
@@ -50,9 +49,9 @@ To get the results run the bench.sh file, to get the extra large result, you nee
 ---
 
 ### Extra Large Dataset
-- **Tempo Medio Sequenziale (3 run):** 961,869574 secondi  
-- **Tempo Medio Parallelo (3 run):** 560,203402 secondi  
-- **Speedup Medio (3 run):** 1,717000  
+- **Average Sequential Execution Time (3 run):** 961,869574 secondi  
+- **Average Parallel Execution Time (3 run):** 560,203402 secondi  
+- **Average Speedup (3 run):** 1,717000  
 
 ---
 
@@ -67,6 +66,3 @@ To get the results run the bench.sh file, to get the extra large result, you nee
 | **Extra Large Dataset** | 961,869574                    | 560,203402                     | 1,717000          |
 
 ---
-
-
-
