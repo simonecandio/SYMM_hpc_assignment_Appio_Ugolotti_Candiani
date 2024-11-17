@@ -107,15 +107,11 @@ static void kernel_symm_sequential(int ni, int nj,
       }
       C[i][j] = beta * C[i][j] + alpha * A[i][i] * B[i][j] + alpha * acc;
     }
-  
   }
-  
   for (i = 0; i < ni; i++) { 
     for (j = 0; j < i; j++) {
       C[i][j] = C[j][i];
     }
-  
-    
   }
 }
 
@@ -133,28 +129,27 @@ static void kernel_symm(int ni, int nj,
 {
   int i, j, k;
  DATA_TYPE acc;
-   #pragma omp parallel num_threads(4)
-   {
-   #pragma omp for private(i,j,k) collapse(2) reduction(+:acc) schedule(static,4) 
-    for (i = 0; i < ni; i++) {
-      for (j = 0; j < nj; j++) {
-        acc = 0;
-        for (k = 0; k < j - 1; k++) { 
-          C[k][j] += alpha * A[k][i] * B[i][j];
-          acc += B[k][j] * A[k][i];
-        }
-        C[i][j] = beta * C[i][j] + alpha * A[i][i] * B[i][j] + alpha * acc;
+ #pragma omp parallel num_threads(4)
+ {
+  #pragma omp for private(i,j,k) collapse(2) reduction(+:acc) schedule(static,4) 
+  for (i = 0; i < ni; i++) {
+    for (j = 0; j < nj; j++) {
+      acc = 0;
+      for (k = 0; k < j - 1; k++) { 
+        C[k][j] += alpha * A[k][i] * B[i][j];
+        acc += B[k][j] * A[k][i];
       }
- }
- }
+      C[i][j] = beta * C[i][j] + alpha * A[i][i] * B[i][j] + alpha * acc;
+      }
+   }
  #pragma omp for schedule(static)
   for (i = 0; i < ni; i++) { 
     for (j = 0; j < i; j++) {
       C[i][j] = C[j][i];
     }
   } 
-  
  }
+}
  
 
 
