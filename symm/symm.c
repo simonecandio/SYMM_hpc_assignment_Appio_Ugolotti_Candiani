@@ -127,7 +127,6 @@ static void kernel_symm(int ni, int nj,
    for (i = 0; i < _PB_NI; i++){
      for (j = 0; j < _PB_NJ; j++){
        acc = 0;
-       #pragma omp reduction(+:acc)
        for (k = 0; k < j - 1; k++)
 	 {        
 	  C[k][j] += alpha * A[k][i] * B[i][j];
