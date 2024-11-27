@@ -5,7 +5,7 @@
 
 > ## Assigned application
 >
-> `OpenMP/linear-algebra/kernels/symm`
+> `linear-algebra/kernels/symm`
 
 ### Implemented functionality
  - [Creation of a function to compare the sequential and parallelized matrix](https://github.com/alleappio/hpc_assignment_1/blob/7f3a465ae524391a9890ad755887fb72a265fcad/symm/symm.c#L144C1-L159C2)
@@ -21,7 +21,7 @@
 
 - [Creation an automatic benchmark for all datasets(excepet EXTRALARGE)](https://github.com/alleappio/hpc_assignment_1/blob/develop_candiani/symm/bench.sh)
 
-# Project Results 
+# OpenMP Project Results 
 ## Average Execution Times and Speedups
 To get the results run the bench.sh file.
 - To get the extra large result, you need to change the run number in main  
@@ -67,5 +67,9 @@ To get the results run the bench.sh file.
 
 ---
 
+# CUDA Project Results 
 
+---
+
+# FPGA Project Results 
 
