@@ -66,6 +66,7 @@ static void kernel_symm_sequential(int ni, int nj,
 }
 
 
+
 __global__ void kernel_symm_cuda(int ni, int nj, DATA_TYPE alpha, DATA_TYPE beta,
                                  DATA_TYPE *C, DATA_TYPE *A, DATA_TYPE *B) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;  // Riga della matrice
@@ -74,13 +75,15 @@ __global__ void kernel_symm_cuda(int ni, int nj, DATA_TYPE alpha, DATA_TYPE beta
     if (i < ni && j < nj) {
         DATA_TYPE acc = 0.0;
 
-        // Calcolo della somma accumulativa per l'elemento corrente
         for (int k = 0; k < nj; k++) {
-            acc += B[k * nj + j] * A[k * nj + i];
+
+           atomicAdd(&C[k * nj + j], alpha * A[k * nj + i] * B[i * nj + j]);
+
+           acc += B[k * nj + j] * A[k * nj + i];
+
         }
 
-        // Aggiornamento del valore finale della matrice C
-        C[i * nj + j] = beta * C[i * nj + j] + alpha * A[i * nj + i] * B[i * nj + j] + alpha * acc;
+        C[i * nj + j] = beta * C[i * nj + j] + alpha * A[i * nj + i] * B[i * nj + j] +alpha * acc;
     }
 }
 
