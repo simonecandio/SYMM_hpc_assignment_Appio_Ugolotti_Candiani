@@ -4,6 +4,8 @@ MAKEFLAGS+= -r
 # Extend CXXFLAGS (compiler flags for C++) with additional parameters provided at the command line
 CXXFLAGS += -O2 ${EXTRA_CXXFLAGS}
 
+CXXFLAGS += $(EXT_CFLAGS)
+
 # Specify the location of the local CUDA installation
 
 # CUDA_HOME := /usr/local/cuda-10.0
