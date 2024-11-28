@@ -3,3 +3,6 @@
 - Emanuele Ugolotti
 - Simone Candiani
 
+> ## Assigned application `linear-algebra/kernels/symm`
+
+
