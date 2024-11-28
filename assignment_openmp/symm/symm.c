@@ -121,23 +121,21 @@ static void kernel_symm(int ni, int nj,
 {
   int i, j, k;
   DATA_TYPE acc;
-  #pragma scop
   #pragma omp parallel num_threads(4)  
  {	
-   #pragma omp for private(i,j,k) collapse(2) reduction(+:acc) schedule(static, 4) 
-	 for (i = 0; i < _PB_NI; i++){
+   #pragma omp for private(i,j,k) collapse(2) schedule(static, 4) 
+   for (i = 0; i < _PB_NI; i++){
      for (j = 0; j < _PB_NJ; j++){
        acc = 0;
        for (k = 0; k < j - 1; k++)
-       {        
-        C[k][j] += alpha * A[k][i] * B[i][j];
-        acc += B[k][j] * A[k][i];
-       } 
+	 {        
+	  C[k][j] += alpha * A[k][i] * B[i][j];
+	  acc += B[k][j] * A[k][i];
+	 } 
        C[i][j] = beta * C[i][j] + alpha * A[i][i] * B[i][j] + alpha * acc;
- 	   }
+     }
    }
  }
-  #pragma endscop
 }
 
 
