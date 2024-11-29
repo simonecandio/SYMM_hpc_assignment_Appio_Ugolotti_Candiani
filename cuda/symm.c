@@ -51,22 +51,16 @@ static void init_array(int ni, int nj,
 
   *alpha = 32412;
   *beta = 2123;
-  //#pragma omp target map(tofrom: C[0:ni][0:nj], B[0:ni][0:nj], A[0:nj][0:nj])
-   #pragma omp parallel
+   #pragma omp parallel num_threads(4)
    {
-    
-    //#pragma omp parallel for num_threads(4) collapse(2) private(i,j) schedule(static)
-    #pragma omp for collapse(2) schedule(static, 8)
-    //#pragma omp teams distribute parallel for collapse(2) schedule(static, 8)
+    #pragma omp for collapse(2) schedule(static)
     for (i = 0; i < ni; i++)
       for (j = 0; j < nj; j++)
       {
         C[i][j] = ((DATA_TYPE)i * j) / ni;
         B[i][j] = ((DATA_TYPE)i * j) / ni;
       }
-    //#pragma omp parallel for collapse(2) private(i,j) schedule(static, 16)
-    #pragma omp for collapse(2) schedule(static, 2) 
-    //#pragma omp teams distribute parallel for collapse(2) schedule(static, 2)
+    #pragma omp for collapse(2) schedule(static)
     for (i = 0; i < nj; i++)
       for (j = 0; j < nj; j++)
         A[i][j] = ((DATA_TYPE)i * j) / ni;
@@ -128,20 +122,15 @@ static void kernel_symm(int ni, int nj,
   int i, j, k;
   DATA_TYPE acc;
 #pragma scop
-#pragma omp parallel
+#pragma omp parallel num_threads(4)
   {
 /*  C := alpha*A*B + beta*C, A is symetric */
-//#pragma omp for private(j, acc, k)
-//#pragma omp for collapse(2) private(i, j, k, acc) schedule(static, 2)
-#pragma omp parallel for collapse(2) private(j, k, acc) shared(C, A, B, alpha, beta) schedule(static, 4)
-//#pragma omp for collapse(2) private(i, j, k) reduction(+:acc)
-     //#pragma omp target data map(to: A[0:nj][0:nj], B[0:ni][0:nj]) map(tofrom: C[0:ni][0:nj])
-      //{
+#pragma omp parallel for collapse(2) private(i, j, k) schedule(static, 4)
       for (i = 0; i < _PB_NI; i++)
       for (j = 0; j < _PB_NJ; j++)
       {
         acc = 0;
-        #pragma omp simd reduction(+:acc)
+        #pragma omp for reduction(+:acc)
         //#pragma omp simd
         for (k = 0; k < j - 1; k++)
         {
@@ -150,7 +139,6 @@ static void kernel_symm(int ni, int nj,
         }
         C[i][j] = beta * C[i][j] + alpha * A[i][i] * B[i][j] + alpha * acc;
       }
-    //  }
   }
 #pragma endscop
 }
