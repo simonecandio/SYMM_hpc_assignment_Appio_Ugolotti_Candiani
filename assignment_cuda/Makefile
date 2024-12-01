@@ -2,8 +2,8 @@ ifndef CUDA_HOME
 CUDA_HOME:=/usr/local/cuda
 endif
 
-ifndef EXERCISE
-EXERCISE=symm.cu
+ifndef SOURCE_FILE
+SOURCE_FILE=symm.cu
 endif
 
 BUILD_DIR ?= ./build
@@ -20,8 +20,8 @@ LDFLAGS:=-lm -lcudart $(EXT_LDFLAGS)
 NVCFLAGS:=$(CXXFLAGS) $(NVOPT)
 NVLDFLAGS:=$(LDFLAGS) -lgomp
 
-OBJS := $(EXERCISE:%=$(BUILD_DIR)/%.o)
-EXE=$(EXERCISE:.cu=.exe)
+OBJS := $(SOURCE_FILE:%=$(BUILD_DIR)/%.o)
+EXE=$(SOURCE_FILE:.cu=.exe)
 
 $(EXE):	$(OBJS)
 	$(MKDIR_P) $(dir $@)

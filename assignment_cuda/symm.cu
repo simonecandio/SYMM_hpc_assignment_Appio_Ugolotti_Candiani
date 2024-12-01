@@ -71,19 +71,33 @@ __global__ void kernel_symm_cuda(int ni, int nj, DATA_TYPE alpha, DATA_TYPE beta
                                  DATA_TYPE *C, DATA_TYPE *A, DATA_TYPE *B) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;  // Riga della matrice
     int j = blockIdx.y * blockDim.y + threadIdx.y;  // Colonna della matrice
+    
+    // Variabile privata per accumulo parziale
+    DATA_TYPE C_private = 0.0;
+    __shared__ DATA_TYPE shared_C[16][16]; 
 
     if (i < ni && j < nj) {
         DATA_TYPE acc = 0.0;
 
         for (int k = 0; k < nj; k++) {
 
-           atomicAdd(&C[k * nj + j], alpha * A[k * nj + i] * B[i * nj + j]);
+           C_private+=alpha * A[k * nj + i] * B[i * nj + j];
 
            acc += B[k * nj + j] * A[k * nj + i];
 
         }
 
-        C[i * nj + j] = beta * C[i * nj + j] + alpha * A[i * nj + i] * B[i * nj + j] +alpha * acc;
+        shared_C[threadIdx.x][threadIdx.y] = C_private;
+        __syncthreads();
+        if (threadIdx.x == 0 && threadIdx.y == 0) {
+            DATA_TYPE block_sum = 0.0;
+            for (int x = 0; x < blockDim.x; x++) {
+                for (int y = 0; y < blockDim.y; y++) {
+                    block_sum += shared_C[x][y];
+                }
+            }
+            C[i * nj + j] = beta * C[i * nj + j] + alpha * A[i * nj + i] * B[i * nj + j] + alpha * acc + block_sum;
+        }
     }
 }
 
@@ -134,12 +148,21 @@ int main(int argc, char **argv)
 
     /* Initialize arrays on host */
     init_array_seq(ni, nj, &alpha, &beta, C_seq, A, B);
-
+    init_array_seq(ni, nj, &alpha, &beta, C_gpu, A, B);
+    printf("comparing before kernel:");
+    if (compare_matrices(ni, nj, C_seq, C_gpu, 1e-2))
+        printf("The calculated matrices are equal.\n");
+    else{
+      printf("The computed matrices are NOT equal.\n");
+      return 0;
+    }
+    
     /* Copy initialized data to GPU */
-    cudaMemcpy(d_C, C_seq, NI * NJ * sizeof(DATA_TYPE), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_C, C_gpu, NI * NJ * sizeof(DATA_TYPE), cudaMemcpyHostToDevice);
     cudaMemcpy(d_A, A, NJ * NJ * sizeof(DATA_TYPE), cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, B, NI * NJ * sizeof(DATA_TYPE), cudaMemcpyHostToDevice);
      /* Execute sequential version */
+
     printf("Executing sequential kernel...\n");
     double seq_start =  clock();
     kernel_symm_sequential(ni, nj, alpha, beta, C_seq, A, B);
