@@ -157,7 +157,7 @@ int main(int argc, char **argv)
     int ni = NI;
     int nj = NJ;
     float total_seq_time = 0.0, total_par_time = 0.0, total_speedup = 0.0;
-    int num_runs =1; // Number of runs to calculate the average
+    int num_runs =3; // Number of runs to calculate the average
 
      for (int run = 0; run < num_runs; run++) {
     float seq_start=0.0,gpu_time=0.0,seq_end=0.0,seq_time=0.0,speedup=0.0;
