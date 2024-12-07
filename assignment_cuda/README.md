@@ -33,7 +33,7 @@ The matrices are equal.
 - **Average Sequential Execution Time over 3 runs:** 0.029822 seconds
 - **Average Parallel Execution Time over 3 runs:** 0.058014 seconds
 - **Average Speedup over 3 runs:** 0.514048
-Completed make for dataset SMALL_DATASET
+### Completed make for dataset SMALL_DATASET
 ----------------------------------------
 ### STANDARD Dataset
 Running make for dataset STANDARD_DATASET
@@ -43,7 +43,7 @@ The matrices are equal.
 - **Average Parallel Execution Time over 3 runs:** 1.841017 seconds
 - **Average Speedup over 3 runs:** 20.866573
   
-##Completed make for dataset STANDARD_DATASET
+### Completed make for dataset STANDARD_DATASET
 ----------------------------------------
 ### LARGE Dataset
 Running make for dataset LARGE_DATASET
@@ -52,7 +52,7 @@ The matrices are equal.
 - **Average Sequential Execution Time over 3 runs:** 103.639361 seconds
 - **Average Parallel Execution Time over 3 runs:** 10.927332 seconds
 - **Average Speedup over 3 runs:** 6.843851
-Completed make for dataset LARGE_DATASET
+### Completed make for dataset LARGE_DATASET
 ----------------------------------------
 ### EXTRALARGE Dataset
 Running make for dataset EXTRALARGE_DATASET
@@ -61,7 +61,7 @@ The matrices are equal.
 - **Average Sequential Execution Time over 3 runs:** 961.69574 seconds
 - **Average Parallel Execution Time over 3 runs:** 82.591141 seconds
 - **Average Speedup over 3 runs:** 11.644054
-Completed make for dataset EXTRALARGE_DATASET
+### Completed make for dataset EXTRALARGE_DATASET
 
 
 ---
