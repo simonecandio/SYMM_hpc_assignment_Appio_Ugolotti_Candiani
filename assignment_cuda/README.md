@@ -42,6 +42,7 @@ The matrices are equal.
 - **Average Sequential Execution Time over 3 runs:** 38.415722 seconds
 - **Average Parallel Execution Time over 3 runs:** 1.841017 seconds
 - **Average Speedup over 3 runs:** 20.866573
+  
 Completed make for dataset STANDARD_DATASET
 ----------------------------------------
 ### LARGE Dataset
