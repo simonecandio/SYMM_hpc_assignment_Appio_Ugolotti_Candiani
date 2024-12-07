@@ -43,7 +43,7 @@ The matrices are equal.
 - **Average Parallel Execution Time over 3 runs:** 1.841017 seconds
 - **Average Speedup over 3 runs:** 20.866573
   
-Completed make for dataset STANDARD_DATASET
+##Completed make for dataset STANDARD_DATASET
 ----------------------------------------
 ### LARGE Dataset
 Running make for dataset LARGE_DATASET
