@@ -1,52 +1,57 @@
-# Disable built-in Makefile rules to speed up the build process
+-include ../../../utilities/options.mk
+-include ../../../utilities/c2.mk
+MAKEFLAGS+= --silent
 MAKEFLAGS+= -r
-
-# Extend CXXFLAGS (compiler flags for C++) with additional parameters provided at the command line
+# Extend CFLAGS with command line parameters
+#CXXFLAGS+= -DPOLYBENCH_TIME
 CXXFLAGS += -O2 ${EXTRA_CXXFLAGS}
-
+ 
 CXXFLAGS += $(EXT_CFLAGS)
 
-# Specify the location of the local CUDA installation
-
+# Select the location of the local CUDA install
 # CUDA_HOME := /usr/local/cuda-10.0
-CUDA_HOME := /usr/local/cuda
+CUDA_HOME:=/usr/local/cuda
 
-# Define the path to the NVIDIA CUDA compiler (nvcc)
-NVCC := $(CUDA_HOME)/bin/nvcc
-
-# Specify the C++ compiler
+# Specify the directory of the nvcc compiler
+NVCC:=$(CUDA_HOME)/bin/nvcc
 CXX := g++
 
-# Define the flags to be used by the nvcc compiler
+# Specify the flags for the nvcc compiler
 NVCFLAGS := $(CXXFLAGS) $(NVOPT)
 
-# Name of the target executable to be generated
+
+# Target executable
 EXE := symm.exe
 
-# Name of the source file containing the CUDA code
+# Source file
 SRC := symm.cu
 
-# Define the corresponding object file name (same base name as the source file, with a .o extension)
+# Object file
 OBJ := $(SRC:.cu=.o)
 
-# Default target that builds the executable
+# Default target
 all: $(EXE)
 
-# Rule to link the object file and create the executable
+# Rule to build the executable
 $(EXE): $(OBJ)
-        $(NVCC) $(NVCFLAGS) $(OBJ) -o $@
+	$(NVCC) $(NVCFLAGS) $(OBJ) -o $@
 
-# Rule to compile the CUDA source file into an object file
+# Rule to compile the CUDA source into an object file
 $(OBJ): $(SRC)
-        $(NVCC) $(NVCFLAGS) -c $< -o $@
+	$(NVCC) $(NVCFLAGS) -c $< -o $@
 
-# Target to run the compiled executable
-# .PHONY indicates this target is not associated with any file
-.PHONY: run
+
+
+.PHONY: run profile clean
 run: $(EXE)
-        ./$(EXE)
+	./$(EXE)
 
-# Target to clean up generated files (object files and executable)
+profile: $(EXE)
+	sudo $(CUDA_HOME)/bin/nvprof --unified-memory-profiling off ./$(EXE)
+
+metrics: $(EXE)
+	sudo $(CUDA_HOME)/bin/nvprof --print-gpu-trace --metrics "eligible_warps_per_cycle,achieved_occupancy,sm_efficiency,ipc" ./$(EXE)
+        
+# Clean up generated files
 clean:
-        rm -f *.o $(EXE)
-
+	rm -f *.o $(EXE)
