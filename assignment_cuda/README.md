@@ -25,7 +25,8 @@
 
 # Project Results 
 ## Average Execution Times and Speedups
-To get the results run the bench.sh file.
+To see the times of the different types of initialization run bench_initialization.sh
+To get the optimization results run the bench.sh file
 
 ----------------------------------------
 ### Small Dataset
