@@ -17,8 +17,8 @@
    * [Configuring CUDA blocks and grid](https://github.com/alleappio/hpc_assignment_Appio_Ugolotti_Candiani/blob/d89ef49d331a12e33a391f28aef4d0c1469bad13/assignment_cuda/symm.cu#L115C1-L116C67)
    * [Creation of a for loop for call in CUDA](https://github.com/alleappio/hpc_assignment_Appio_Ugolotti_Candiani/blob/d89ef49d331a12e33a391f28aef4d0c1469bad13/assignment_cuda/symm.cu#L127C4-L130C6)
    * [Kernel call in CUDA](https://github.com/alleappio/hpc_assignment_Appio_Ugolotti_Candiani/blob/d89ef49d331a12e33a391f28aef4d0c1469bad13/assignment_cuda/symm.cu#L128C1-L128C82)
-   - For Init:
-     * We decided to use the sequential function
+ - For Init:
+   * We decided to use the sequential function
 
 - [Creation an automatic benchmark for all datasets](https://github.com/alleappio/hpc_assignment_1/blob/develop_candiani/symm/bench.sh)
 - [Creation an automatic benchmark for all datasets for initialization](https://github.com/alleappio/hpc_assignment_Appio_Ugolotti_Candiani/blob/d89ef49d331a12e33a391f28aef4d0c1469bad13/assignment_cuda/bench_initialization.sh#L1C1-L18C48)
