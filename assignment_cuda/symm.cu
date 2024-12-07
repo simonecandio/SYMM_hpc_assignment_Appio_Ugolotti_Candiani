@@ -3,12 +3,8 @@
 #include <string.h>
 #include <math.h>
 #include <cuda.h>
-//#include "polybench.hu"
 #include "symm.hu"
 
-#ifndef CUDA_NTHREADS
-#define CUDA_NTHREADS 128
-#endif
 
 /* Array initialization (host side) */
 static void init_array_seq(int ni, int nj,
@@ -19,7 +15,7 @@ static void init_array_seq(int ni, int nj,
                            DATA_TYPE *B)
 {
     int i, j;
-  
+
     *alpha = 32412.0;
     *beta = 2123.0;
 
@@ -41,7 +37,6 @@ static void init_array_seq(int ni, int nj,
     }
 }
 
-/* Sequential symm kernel */
 static void kernel_symm_sequential(int ni, int nj,
                                    DATA_TYPE alpha,
                                    DATA_TYPE beta,
@@ -61,52 +56,99 @@ static void kernel_symm_sequential(int ni, int nj,
                 acc += B[k * nj + j] * A[k * nj + i];
 }
             C[i * nj + j] = beta * C[i * nj + j] + alpha * A[i * nj + i] * B[i * nj + j] + alpha * acc;
+
         }
     }
 }
 
+__global__ void symm_kernel_row(int nj, int i, DATA_TYPE alpha, DATA_TYPE beta,
+                                DATA_TYPE *C, DATA_TYPE *A, DATA_TYPE *B) {
 
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
 
-__global__ void kernel_symm_cuda(int ni, int nj, DATA_TYPE alpha, DATA_TYPE beta,
-                                 DATA_TYPE *C, DATA_TYPE *A, DATA_TYPE *B) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;  // Riga della matrice
-    int j = blockIdx.y * blockDim.y + threadIdx.y;  // Colonna della matrice
-
-    if (i < ni && j < nj) {
+    if (j < nj) {
         DATA_TYPE acc = 0.0;
 
-        for (int k = 0; k < nj; k++) {
-
-           atomicAdd(&C[k * nj + j], alpha * A[k * nj + i] * B[i * nj + j]);
-
-           acc += B[k * nj + j] * A[k * nj + i];
-
+        // Add the contribution from k to j-1
+        for (int k = 0; k < j - 1; ++k) {
+            C[k * nj + j] += alpha * A[k * nj + i] * B[i * nj + j];
+            acc += B[k * nj + j] * A[k * nj + i];
         }
 
-        C[i * nj + j] = beta * C[i * nj + j] + alpha * A[i * nj + i] * B[i * nj + j] +alpha * acc;
+        // Final calculation for C[i][j]
+        C[i * nj + j] = beta * C[i * nj + j] + alpha * A[i * nj + i] * B[i * nj + j] + alpha * acc;
     }
 }
 
 
-
-int compare_matrices(int ni, int nj, DATA_TYPE *C1, DATA_TYPE *C2, double tolerance)
-{
-    for (int i = 0; i < ni; i++)
+int compare_matrices(int ni, int nj, DATA_TYPE *C, DATA_TYPE *C_original){
+     for (int i = 0; i < ni; i++)
     {
         for (int j = 0; j < nj; j++)
         {
+         if (fabs(C[i * nj + j] - C_original[i * nj + j]) > 1e-3) {
+         printf("C_seq[%d][%d] = %f, C_gpu[%d][%d] = %f\n",i, j, C[i * nj + j], i, j, C_original[i * nj + j]);
+         return 0;
+         }
 
-            if (fabs(C1[i * nj + j] - C2[i * nj + j]) > tolerance)
-            {
-             //printf("C1[%d][%d] = %f, C2[%d][%d] = %f, diff = %f\n",i, j, C1[i * nj + j], i, j, C2[i * nj + j],fabs(C1[i * nj + j] - C2[i * nj + j]));
-             return 0; // Matrices are not equal
-            }
         }
     }
-    return 1; // Matrices are equal
+    return 1;
 }
 
 
+void symmCuda(int ni, int nj, DATA_TYPE alpha, DATA_TYPE beta, DATA_TYPE *C, DATA_TYPE *A, DATA_TYPE *B, DATA_TYPE *C_outputFromGpu,float *gpu_time)
+{
+   int DIM_THREAD_BLOCK_X = 32;
+    DATA_TYPE *A_gpu;
+    DATA_TYPE *B_gpu;
+    DATA_TYPE *C_gpu;
+
+
+    cudaMalloc((void **)&A_gpu, sizeof(DATA_TYPE) * ni * nj);
+    cudaMalloc((void **)&B_gpu, sizeof(DATA_TYPE) * ni * nj);
+    cudaMalloc((void **)&C_gpu, sizeof(DATA_TYPE) * ni * nj);
+    cudaMemcpy(A_gpu, A, sizeof(DATA_TYPE) * ni * nj, cudaMemcpyHostToDevice);
+    cudaMemcpy(B_gpu, B, sizeof(DATA_TYPE) * ni * nj, cudaMemcpyHostToDevice);
+    cudaMemcpy(C_gpu, C, sizeof(DATA_TYPE) * ni * nj, cudaMemcpyHostToDevice);
+
+    dim3 block(DIM_THREAD_BLOCK_X);
+    dim3 grid((nj + DIM_THREAD_BLOCK_X - 1) / DIM_THREAD_BLOCK_X);
+
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    /* Start timing */
+    cudaEventRecord(start);
+    
+    // Launch a kernel for each line `i`
+
+    for (int i = 0; i < ni; i++) {
+       symm_kernel_row<<<grid, block>>>(nj, i, alpha, beta, C_gpu, A_gpu, B_gpu);
+       //cudaDeviceSynchronize();
+    }
+
+    /* Stop timing */
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+
+    cudaEventElapsedTime(gpu_time, start, stop);
+
+    //printf("Kernel execution time (CUDA): %f s\n", gpu_time / 1000.0);
+
+    /* Stop and print timer. */
+
+
+    cudaMemcpy(C_outputFromGpu, C_gpu, sizeof(DATA_TYPE) * ni * nj, cudaMemcpyDeviceToHost);
+
+    cudaFree(C_gpu);
+    cudaFree(A_gpu);
+    cudaFree(B_gpu);
+    /* Destroy CUDA events */
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+}
 
 /* Host code for CUDA execution */
 int main(int argc, char **argv)
@@ -114,92 +156,64 @@ int main(int argc, char **argv)
     /* Retrieve problem size. */
     int ni = NI;
     int nj = NJ;
+    float total_seq_time = 0.0, total_par_time = 0.0, total_speedup = 0.0;
+    int num_runs =1; // Number of runs to calculate the average
+
+     for (int run = 0; run < num_runs; run++) {
+    float seq_start=0.0,gpu_time=0.0,seq_end=0.0,seq_time=0.0,speedup=0.0;
+
     /* Variable declaration/allocation. */
     DATA_TYPE alpha;
     DATA_TYPE beta;
-    DATA_TYPE *C_seq,*C_gpu, *A, *B;
-    DATA_TYPE *d_C, *d_A, *d_B;
 
-    int blockSizeX = 16;
-    int blockSizeY = 16;
+    DATA_TYPE *A = (DATA_TYPE *)malloc(sizeof(DATA_TYPE) * ni * nj);
+    DATA_TYPE *B = (DATA_TYPE *)malloc(sizeof(DATA_TYPE) * ni * nj);
+    DATA_TYPE *C = (DATA_TYPE *)malloc(sizeof(DATA_TYPE) * ni * nj);
+    DATA_TYPE *C_outputFromGpu = (DATA_TYPE *)malloc(sizeof(DATA_TYPE) * ni * nj);
 
-    C_seq = (DATA_TYPE *)malloc(NI * NJ * sizeof(DATA_TYPE));
-    C_gpu = (DATA_TYPE *)malloc(NI * NJ * sizeof(DATA_TYPE));
-    A = (DATA_TYPE *)malloc(NJ * NJ * sizeof(DATA_TYPE));
-    B = (DATA_TYPE *)malloc(NI * NJ * sizeof(DATA_TYPE));
+    init_array_seq(ni, nj, &alpha, &beta, C, A, B);
 
-    cudaMalloc((void **)&d_C, NI * NJ * sizeof(DATA_TYPE));
-    cudaMalloc((void **)&d_A, NJ * NJ * sizeof(DATA_TYPE));
-    cudaMalloc((void **)&d_B, NI * NJ * sizeof(DATA_TYPE));
-
-    /* Initialize arrays on host */
-    init_array_seq(ni, nj, &alpha, &beta, C_seq, A, B);
-
-    /* Copy initialized data to GPU */
-    cudaMemcpy(d_C, C_seq, NI * NJ * sizeof(DATA_TYPE), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_A, A, NJ * NJ * sizeof(DATA_TYPE), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, B, NI * NJ * sizeof(DATA_TYPE), cudaMemcpyHostToDevice);
-     /* Execute sequential version */
-    printf("Executing sequential kernel...\n");
-    double seq_start =  clock();
-    kernel_symm_sequential(ni, nj, alpha, beta, C_seq, A, B);
-    double seq_end = clock();
-    double seq_time =( (double)(seq_end - seq_start)) / CLOCKS_PER_SEC * 1000.0; // Convert to milliseconds
-    printf("Sequential kernel execution time: %f ms\n", seq_time);
+    symmCuda(ni, nj, alpha, beta, C, A, B, C_outputFromGpu, &gpu_time);
+    //printf("Kernel execution time (CUDA): %f s\n", gpu_time / 1000.0);
+    total_par_time += (gpu_time/1000.0);
 
 
-    /* Define grid and block dimensions */
-    dim3 block(blockSizeX, blockSizeY);
-    dim3 grid((ni + blockSizeX - 1) / blockSizeX, (nj + blockSizeY - 1) / blockSizeY);
+    seq_start =  clock();
+    kernel_symm_sequential(ni, nj, alpha, beta, C, A, B);
+    seq_end = clock();
+    seq_time =( (double)(seq_end - seq_start)) / CLOCKS_PER_SEC ; 
+    //printf("Sequential kernel execution time: %f s\n", seq_time);
+    total_seq_time += seq_time;
 
 
-    /* CUDA events for timing */
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-
-    /* Start timing */
-    cudaEventRecord(start);
-
-    /* Launch CUDA kernel */
-    printf("Executing CUDA kernel...\n");
-    kernel_symm_cuda<<<grid, block>>>(ni, nj, alpha, beta, d_C, d_A, d_B);
-    cudaDeviceSynchronize();
-
-    /* Stop timing */
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
-
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start, stop);
-
-    printf("Kernel execution time (CUDA): %f ms\n", milliseconds);
-
-
-    /* Copy results back to host */
-    cudaMemcpy(C_gpu, d_C, NI * NJ * sizeof(DATA_TYPE), cudaMemcpyDeviceToHost);
-
-    if (compare_matrices(ni, nj, C_seq, C_gpu,1e-3))
-        printf("The calculated matrices are equal.\n");
-      else
-      {
-        printf("The computed matrices are NOT equal.\n");
-        return 0;
+    if (run == 0) {
+     if (compare_matrices(ni, nj, C, C_outputFromGpu)) {
+      printf("The matrices are equal.\n");
       }
+      else {
+      printf("The matrices are NOT equal.\n");
+      return 0;
+      }
+    }
 
-    /* Free memory */
-    free(C_seq);
-    free(C_gpu);
+    speedup = seq_time / (gpu_time / 1000.0);
+    total_speedup += speedup;
+
     free(A);
     free(B);
-    cudaFree(d_C);
-    cudaFree(d_A);
-    cudaFree(d_B);
+    free(C);
+    free(C_outputFromGpu);
+}
 
-    /* Destroy CUDA events */
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
+    /* Calculate the averages */
+    double avg_seq_time = total_seq_time / num_runs;
+    double avg_par_time = total_par_time / num_runs;
+    double avg_speedup = total_speedup / num_runs;
+
+    /* Print average results */
+    printf("\nAverage Sequential Execution Time over %d runs: %f seconds\n", num_runs, avg_seq_time);
+    printf("Average Parallel Execution Time over %d runs: %f seconds\n", num_runs, avg_par_time);
+    printf("Average Speedup over %d runs: %f\n", num_runs, avg_speedup);
 
     return 0;
 }
-                                       
