@@ -54,7 +54,7 @@ The matrices are equal.
 
 - **Average Sequential Execution Time over 3 runs:** 103.639361 seconds
 - **Average Parallel Execution Time over 3 runs:** 10.927332 seconds
-- **Average Speedup over 3 runs:** 6.843851
+- **Average Speedup over 3 runs:** 9.484415
 ### Completed make for dataset LARGE_DATASET
 ----------------------------------------
 ### EXTRALARGE Dataset
@@ -74,9 +74,9 @@ The matrices are equal.
 
 | **Dataset**      | **Average Sequential Time (s)** | **Average Parallel Time (s)** | **Average Speedup** |
 |-------------------|---------------------------------|--------------------------------|--------------------|
-| **SMALL DATASET** | 0.016330                       | 0.066347                       | 0.246130          |
+| **SMALL DATASET** | 0.029822                       | 0.058014                       | 0.514048          |
 | **Standard DATASET** | 38.415722                      | 1.841017                      | 20.866573          |
-| **Large Dataset** | 74.785027                      | 10.927332                      | 6.843851          |
-| **Extra Large Dataset** | 738.156433                    | 82.591141                     | 8.937477          |
+| **Large Dataset** | 103.639361                      | 10.927332                      | 9.484415          |
+| **Extra Large Dataset** | 961.69574                    | 82.591141                     | 11.644054          |
 
 ---
