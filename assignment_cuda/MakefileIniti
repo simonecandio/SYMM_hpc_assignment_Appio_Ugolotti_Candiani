@@ -1,0 +1,47 @@
+MAKEFLAGS+= -r
+# Extend CFLAGS with command line parameters
+CXXFLAGS += -O2 ${EXTRA_CXXFLAGS}
+ 
+CXXFLAGS += $(EXT_CFLAGS)
+
+# Select the location of the local CUDA install
+# CUDA_HOME := /usr/local/cuda-10.0
+CUDA_HOME:=/usr/local/cuda
+
+# Specify the directory of the nvcc compiler
+NVCC:=$(CUDA_HOME)/bin/nvcc
+CXX := g++
+
+# Specify the flags for the nvcc compiler
+NVCFLAGS := $(CXXFLAGS) $(NVOPT)
+
+
+# Target executable
+EXE := initialization.exe
+
+# Source file
+SRC := initialization.cu
+
+# Object file
+OBJ := $(SRC:.cu=.o)
+
+# Default target
+all: $(EXE)
+
+# Rule to build the executable
+$(EXE): $(OBJ)
+	$(NVCC) $(NVCFLAGS) $(OBJ) -o $@
+
+# Rule to compile the CUDA source into an object file
+$(OBJ): $(SRC)
+	$(NVCC) $(NVCFLAGS) -c $< -o $@
+
+
+ # Run the executable
+.PHONY: run
+run: $(EXE)
+	./$(EXE)
+
+# Clean up generated files
+clean:
+	rm -f *.o $(EXE)
